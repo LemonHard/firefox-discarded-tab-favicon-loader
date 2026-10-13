@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Discarded Tab Favicon Loader",
-  "version": "0.1.0-dev",
+  "version": "0.2.0",
   "description": "Retrieve only the page title and favicon for selected discarded Firefox tabs without loading the full page.",
   "permissions": [
     "tabs",
