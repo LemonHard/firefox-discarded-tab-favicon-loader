@@ -60,8 +60,28 @@ The initial implementation uses **Manifest V2** because Firefox still exposes th
 ├── background.js
 ├── LICENSE
 └── docs/
-    └── ARCHITECTURE.md
+    ├── ARCHITECTURE.md
+    └── TESTING.md
 ```
+
+## Development status
+
+Branch `dev` currently contains the first functional V1 implementation:
+
+- selected discarded-tab discovery
+- strict sequential queue
+- redirect-aware final response interception
+- `StreamFilter` cutoff at `</head>`
+- 512 KiB safety limit
+- title and favicon extraction
+- `<base href>` resolution without copying `<base>`
+- `/favicon.ico` fallback
+- minimal black synthetic result page
+- `tabs.onUpdated` / `tab.favIconUrl` probing
+- console diagnostics
+- one-shot interception so the real page can subsequently be reloaded normally
+
+See [docs/TESTING.md](docs/TESTING.md) for the first Firefox test procedure.
 
 ## References
 
@@ -69,10 +89,6 @@ The initial implementation uses **Manifest V2** because Firefox still exposes th
 - MDN `filterResponseData()`: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/filterResponseData
 - MDN `StreamFilter`: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/StreamFilter
 - MDN `StreamFilter.close()`: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/StreamFilter/close
-
-## Status
-
-Early experimental development. No release yet.
 
 ## License
 
