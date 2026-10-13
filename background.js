@@ -46,7 +46,7 @@ function getHeader(headers, name) {
 }
 
 function parseCharset(contentType) {
-  const match = /(?:^|;)s*charsets*=s*["']?([^;"'s]+)/i.exec(contentType || "");
+  const match = /(?:^|;)\s*charset\s*=\s*["']?([^;"'\s]+)/i.exec(contentType || "");
   return match ? match[1] : "";
 }
 
@@ -59,7 +59,7 @@ function chooseCharset(bytes, httpCharset) {
 
   try {
     const sample = new TextDecoder("windows-1252").decode(bytes.subarray(0, Math.min(bytes.length, 16384)));
-    const meta = /<metas+[^>]*charsets*=s*["']?s*([^s"'/>;]+)/i.exec(sample);
+    const meta = /<meta\s+[^>]*charset\s*=\s*["']?\s*([^\s"'/>;]+)/i.exec(sample);
     if (meta) candidates.push(meta[1]);
   } catch (_ignored) {}
 
@@ -115,7 +115,7 @@ function escapeHtml(value) {
     if (ch === "&") out += "&amp;";
     else if (ch === "<") out += "&lt;";
     else if (ch === ">") out += "&gt;";
-    else if (ch === """) out += "&quot;";
+    else if (ch === "\"") out += "&quot;";
     else if (ch === "'") out += "&#39;";
     else if (cp >= 0x20 && cp <= 0x7e) out += ch;
     else out += "&#x" + cp.toString(16) + ";";
@@ -129,7 +129,7 @@ function resolveUrl(raw, base, icon) {
     const url = new URL(raw, base);
     if (icon) {
       if (!["http:", "https:", "data:"].includes(url.protocol)) return null;
-      if (url.protocol === "data:" && !/^data:image//i.test(url.href)) return null;
+      if (url.protocol === "data:" && !/^data:image\//i.test(url.href)) return null;
     } else if (!["http:", "https:"].includes(url.protocol)) return null;
     return url.href;
   } catch (_ignored) {
@@ -138,7 +138,7 @@ function resolveUrl(raw, base, icon) {
 }
 
 function extractHead(html, finalUrl) {
-  const match = /</heads*>/i.exec(html);
+  const match = /<\/head\s*>/i.exec(html);
   if (!match) return null;
   const headHtml = html.slice(0, match.index + match[0].length);
   const doc = new DOMParser().parseFromString(headHtml, "text/html");
@@ -156,8 +156,7 @@ function extractHead(html, finalUrl) {
     if (!rel.toLowerCase().includes("icon")) continue;
     const href = resolveUrl(link.getAttribute("href"), base, true);
     if (!href) continue;
-    const key = rel.toLowerCase() + "
-" + href;
+    const key = rel.toLowerCase() + "\n" + href;
     if (seen.has(key)) continue;
     seen.add(key);
     icons.push({
@@ -183,13 +182,12 @@ function fallbackIcon(finalUrl) {
 
 function iconLinks(icons) {
   return icons.map(function (icon) {
-    const attrs = ["rel="" + escapeHtml(icon.rel) + """, "href="" + escapeHtml(icon.href) + """];
-    if (icon.type) attrs.push("type="" + escapeHtml(icon.type) + """);
-    if (icon.sizes) attrs.push("sizes="" + escapeHtml(icon.sizes) + """);
-    if (icon.media) attrs.push("media="" + escapeHtml(icon.media) + """);
+    const attrs = ["rel=\"" + escapeHtml(icon.rel) + "\"", "href=\"" + escapeHtml(icon.href) + "\""];
+    if (icon.type) attrs.push("type=\"" + escapeHtml(icon.type) + "\"");
+    if (icon.sizes) attrs.push("sizes=\"" + escapeHtml(icon.sizes) + "\"");
+    if (icon.media) attrs.push("media=\"" + escapeHtml(icon.media) + "\"");
     return "<link " + attrs.join(" ") + ">";
-  }).join("
-");
+  }).join("\n");
 }
 
 function syntheticHtml(job, result) {
@@ -204,46 +202,23 @@ function syntheticHtml(job, result) {
 
   return [
     "<!doctype html>",
-    "<html><head><meta charset="utf-8"><title>" + escapeHtml(title) + "</title>",
+    "<html><head><meta charset=\"utf-8\"><title>" + escapeHtml(title) + "</title>",
     iconLinks(result.icons),
-    "</head><body bgcolor="#000000" text="#ffffff" link="#80bfff" vlink="#80bfff"><pre>",
-    "Download only page title and favicon on discarded tabs
-
-",
-    "Title
-------------------------------------------------------------
-" + escapeHtml(title) + "
-
-",
-    "Favicon
-------------------------------------------------------------
-" + escapeHtml(faviconState) + "
-",
-    "Candidates supplied to Firefox : " + result.icons.length + "
-",
-    "Firefox favIconUrl              : waiting for Firefox...
-
-",
-    "Page
-------------------------------------------------------------
-" + escapeHtml(pageState) + "
-",
-    "Final URL                       : " + escapeHtml(reloadUrl) + "
-",
-    "HTTP status                     : " + escapeHtml(job.statusCode || "unknown") + "
-",
-    "Content-Type                    : " + escapeHtml(job.contentType || "not supplied") + "
-",
-    "Charset used to parse head      : " + escapeHtml(job.charset || "not applicable") + "
-",
-    "Response bytes observed         : " + job.bytesObserved + "
-",
-    "Redirects observed              : " + job.redirectCount + "
-",
-    "Processing time                 : " + (Date.now() - job.startTime) + " ms
-
-",
-    "<a href="" + escapeHtml(reloadUrl) + "">Reload full page</a>",
+    "</head><body bgcolor=\"#000000\" text=\"#ffffff\" link=\"#80bfff\" vlink=\"#80bfff\"><pre>",
+    "Download only page title and favicon on discarded tabs\n\n",
+    "Title\n------------------------------------------------------------\n" + escapeHtml(title) + "\n\n",
+    "Favicon\n------------------------------------------------------------\n" + escapeHtml(faviconState) + "\n",
+    "Candidates supplied to Firefox : " + result.icons.length + "\n",
+    "Firefox favIconUrl              : waiting for Firefox...\n\n",
+    "Page\n------------------------------------------------------------\n" + escapeHtml(pageState) + "\n",
+    "Final URL                       : " + escapeHtml(reloadUrl) + "\n",
+    "HTTP status                     : " + escapeHtml(job.statusCode || "unknown") + "\n",
+    "Content-Type                    : " + escapeHtml(job.contentType || "not supplied") + "\n",
+    "Charset used to parse head      : " + escapeHtml(job.charset || "not applicable") + "\n",
+    "Response bytes observed         : " + job.bytesObserved + "\n",
+    "Redirects observed              : " + job.redirectCount + "\n",
+    "Processing time                 : " + (Date.now() - job.startTime) + " ms\n\n",
+    "<a href=\"" + escapeHtml(reloadUrl) + "\">Reload full page</a>",
     "</pre></body></html>"
   ].join("");
 }
@@ -315,7 +290,7 @@ function failStream(job, message) {
 
 function tryFinalize(job) {
   const decoded = decodeHead(job);
-  if (!/</heads*>/i.test(decoded)) return false;
+  if (!/<\/head\s*>/i.test(decoded)) return false;
 
   let data;
   try {
